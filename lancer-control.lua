@@ -11,7 +11,7 @@ throttleUpdateTicks = 20    --  Number of ticks between recalculating how much t
 --  End user-configurable variables. Do not edit anything below this line.
 
 
---  Available properties: .info (MissileWarningInfo object), .fuel, .thrust, .transceiver, .index, .id, .timeToThrustCalc, .hasBallast, .numThrusters
+--  Available properties: .info (MissileWarningInfo object), .fuel, .thrust, .transceiver, .index, .id, .timeToThrustCalc, .hasBallast, .thrusters
 missiles = {}
 
 tickRate = 1 / 40            --  Tick rate per second
@@ -46,7 +46,7 @@ function missileSense(I)
                     local totalFuel = 0
                     local baseThrust = 0
                     local hasBallast = false
-                    local numThrusters = 0
+                    local thrusters = {}
 
                     --  Look through our missile parts.
                     for ix,part in pairs(parts.Parts) do
@@ -54,7 +54,7 @@ function missileSense(I)
                             totalFuel = totalFuel + 5000
                         elseif (string.find(part.Name, 'variable')) then
                             baseThrust = baseThrust + part.Registers[2]
-                            numThrusters = numThrusters + 1
+                            table.insert(thrusters, ix)
                         elseif (string.find(part.Name, 'ballast')) then
                             hasBallast = true
                         end
@@ -69,10 +69,10 @@ function missileSense(I)
                     missiles[missileInfo.Id].id = missileInfo.Id
                     missiles[missileInfo.Id].timeToThrustCalc = throttleUpdateTicks
                     missiles[missileInfo.Id].hasBallast = hasBallast
-                    missiles[missileInfo.Id].numThrusters = numThrusters
+                    missiles[missileInfo.Id].thrusters = thrusters
                 --  If this is not the first time we've seen this missile, update its fuel counter based on its current thrust
                 elseif (missiles[missileInfo.Id].fuel >= 0) then
-                    missiles[missileInfo.Id].fuel = missiles[missileInfo.Id].fuel - missiles[missileInfo.Id].thrust * tickRate * missiles[missileInfo.Id].numThrusters
+                    missiles[missileInfo.Id].fuel = missiles[missileInfo.Id].fuel - missiles[missileInfo.Id].thrust * tickRate * table.getn(missiles[missileInfo.Id].thrusters)
                 end
 
                 --  On every tick, update how long it is until we need to reconsider our throttle value, update the missile info object,
@@ -95,13 +95,12 @@ end
 --  Sets the thrust amount for the variable thruster(s) on a missile to the designated amount, then updates the missile object in our missiles table
 function setThrottle(I, missile, throttle)
     local missileParts = I:GetMissileInfo(missile.transceiver, missile.index)
-    if (missileParts ~= nil and missile.numThrusters > 0) then
-        throttle = throttle / missile.numThrusters
-        for k, v in pairs(missileParts.Parts) do
-                if string.find(v.Name, 'variable') then
-                    v:SendRegister(2, throttle)
-                break
-            end
+    local numThrusters = table.getn(missile.thrusters)
+    
+    if (missileParts ~= nil and numThrusters > 0) then
+        throttle = throttle / numThrusters
+        for ix, index in pairs(missile.thrusters) do
+            missileParts.Parts[index]:SendRegister(2, throttle)
         end
 
         missiles[missile.id].thrust = throttle
