@@ -95,7 +95,8 @@ end
 --  Sets the thrust amount for the variable thruster(s) on a missile to the designated amount, then updates the missile object in our missiles table
 function setThrottle(I, missile, throttle)
     local missileParts = I:GetMissileInfo(missile.transceiver, missile.index)
-    if (missileParts ~= nil) then
+    if (missileParts ~= nil and missile.numThrusters > 0) then
+        throttle = throttle / missile.numThrusters
         for k, v in pairs(missileParts.Parts) do
                 if string.find(v.Name, 'variable') then
                     v:SendRegister(2, throttle)
