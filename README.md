@@ -7,6 +7,8 @@ We highly recommend also attaching at least one ejector to the launch pad, and s
 
 The code will aim to burn as much fuel as possible by the time of impact. It will also throttle back based on the amount it has to turn to impact the target, so the missile should get extra time to turn to face the target, as well as conserving fuel for the final terminal burn.
 
+If the missile contains a ballast component, it is allowed to strike at underwater targets. If no ballast component is present, it will attempt to strike just below the waterline if the AI targets a block that is underwater.
+
 Currently, there are 4 settings.
 
 maxTimeToTarget: This specifies a number in seconds that limits the maximum time that the target's movement will be projected for the purposes of determining guidance. If this value is too high, targets that wobble or jitter a lot will cause the missile to behave very erratically at long range, and the missile will spend far too much time and fuel maneuvering to try to keep up with the predictions. If it's too low, the missile will have trouble converging on fast targets.
